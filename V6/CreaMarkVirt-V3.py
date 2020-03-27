@@ -5,12 +5,13 @@ from BiorbdViz import BiorbdViz
 import scipy.interpolate
 import scipy.integrate
 import numpy as np
+import conf as conf
 
-T = 3.2
-N = 1000
+T = conf.T
+N = conf.N
 dN = T/N
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
 #kni
 
 # Creation des fonctions integrals
@@ -60,9 +61,8 @@ V = np.gradient(Q, dN, edge_order = 1, axis=1)
 
 # Definition des couples articulaires
 
-Tart_opt = np.load('Couple_Opt_V3.npy')
-T1 = Tart_opt[4::6]
-T2 = Tart_opt[5::6]
+T1 = 10*np.tanh(tps)
+T2 = 5*np.tanh(tps)
 Vbis = np.zeros((2, 1)).squeeze()
 Qbis = np.array([1, 0.5])
 Xk = []
@@ -120,19 +120,23 @@ plt.title('Position Initial')
 plt.legend(loc='best')
 plt.show(block=True)
 plt.figure()
-
+plt.plot(tps, T1, label = 'Couple 0 tan')
+plt.plot(tps, T2, label = 'Couple 1 tan')
+plt.title('Couple Initial')
+plt.legend(loc='best')
+plt.show(block=True)
 
 # Affichage creation Model
 
 
 qs = np.array([Qbis[:-1, 0], Qbis[:-1, 1]])                                           # argument = les different angle de ton model par DDL
 np.save("visual", qs.T)                                                               # qs.T pour transposer de qs
-b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V3/arm26.bioMod")           # Va chercher ton modele
+b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")           # Va chercher ton modele
 b.load_movement(qs.T)
 b.exec()
 
 # qs = np.array([Q1, Q2])                                                               # argument = les different angle de ton model par DDL
 # np.save("visual", qs.T)                                                               # qs.T pour transposer de qs
-# b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V3/arm26.bioMod")           # Va chercher ton modele
+# b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")           # Va chercher ton modele
 # b.load_movement(qs.T)
 # b.exec()

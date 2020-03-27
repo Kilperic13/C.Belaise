@@ -1,35 +1,43 @@
-import numpy as np
-import numpy.linalg as la
+#import numpy as np
+#import numpy.linalg as la
 import matplotlib.pyplot as plt
 from casadi import *
 import time
 import biorbd
-from BiorbdViz import BiorbdViz
+#from BiorbdViz import BiorbdViz
 import fct_belaise as fctBel
+import conf as conf
 
-T          = 3.2
-N          = 1000
-# Tibv1 = T
-# Nibv1 = N
+T          = conf.T
+N          = conf.N
 dN         = T/N
 plt.ion()
 
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
 
 
-# Creation des fonctions integral
+# Creation des fonctionsCreat integral
 
-#L = lambda tau: tau * tau
+# L = lambda tau: tau * tau
 # f = lambda x, tau: vertcat(x[-model.nbQdot():], model.ForwardDynamics(x[:model.nbQ()], x[-model.nbQdot():], tau))
-x = MX.sym('x', model.nbQ()*2, 1)
-q = MX.sym('q', model.nbQ(), 1)
+x   = MX.sym('x', model.nbQ()*2, 1)
+q   = MX.sym('q', model.nbQ(), 1)
 tau = MX.sym('tau', model.nbQ(), 1)
-F = Function('F', [x, tau], [vertcat(x[-model.nbQdot():], model.ForwardDynamics(x[:model.nbQ()], x[-model.nbQdot():], tau).to_mx())]).expand()
+
+act = MX.sym('act', model.nbMuscleTotal(), 1)
+markers = MX.sym('markers', 3, model.nbMarkers())
+dataMarkers = MX.sym('dataMarkers', model.nbMarkers(), 3)
+
+
+FD = Function('FD', [x, tau], [vertcat(x[-model.nbQdot():], model.ForwardDynamics(x[:model.nbQ()], x[-model.nbQdot():], tau).to_mx())]).expand()
+FA = Function('FA', [x, act], [fctBel.fct_Tarticulaire(x, act)]).expand()
+MD = Function('MD', [markers, dataMarkers], [fctBel.fcn_objective_markers_Lea(conf.wMa, conf.wMt, markers, dataMarkers)]).expand()
+
 Markers = Function('markers', [q], [model.markers(q)]).expand()
 x = SX.sym('x', model.nbQ()*2, 1)
 tau = SX.sym('tau', model.nbQ(), 1)
-dae = {'x': x, 'p': tau, 'ode': F(x, tau)}
+dae = {'x': x, 'p': tau, 'ode': FD(x, tau)}
 opts = {'tf': T / N, 'number_of_finite_elements': 5}
 INT = integrator('INT', 'rk', dae, opts)
 
@@ -44,28 +52,30 @@ J = 0                                       #A optimiser
 g = []                                      #Contrainte
 ubg = []
 lbg = []
-DataMarkeur = np.load('DataMarkeur-Couple2.npy')    #Data position Markeur Reel - CREER Virtuel
+DataMarkeur = np.load('DataMarkeur-Couple.npy')    #Data position Markeur Reel - CREER Virtuel
 Ncmv = len(DataMarkeur)                     # Nombre de dataMarkeur, CMV : Creat
 # Shapecmv = DataMarkeur.shape
 # DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])
 Nb_Markeur = model.nbMarkers()              #Nombre de Markeur Model
+Nb_Muscles = model.nbMuscleTotal()
 Nb_Torque = model.nbGeneralizedTorque()
-wMa = 1000000
-wMt = 1000000
+wMa = conf.wMa
+wMt = conf.wMt
+Pa = conf.Pa                                # Poid erreur activation
 
 # Intitialisation lineaire de Q
 
-Initi_Debut = 0
+Initi_Debut = -5
 Initi_Fin = 10
 PI = [((Initi_Fin - Initi_Debut) * k * dN + Initi_Debut) for k in range(N+1)]
 
 #Creation premier noeud
 
-tps = [k * dN for k in range(N + 1)]
-q1 = [cos(t) for t in tps]
-q2 = [k / 2 for k in q1]
-
-Q = np.array([[q1[k], q2[k]] for k in range(len(q1))])
+# tps = [k * dN for k in range(N + 1)]
+# q1 = [cos(t) for t in tps]
+# q2 = [k / 2 for k in q1]
+#
+# Q = np.array([[q1[k], q2[k]] for k in range(len(q1))])
 
 Xk = MX.sym('X0', (model.nbQ() + model.nbQdot()))           #ici 4 car 2 DDL et leurs vitesses (Theta1 - Wtheta1 - Theta2 - Wtheta2)
 w += [Xk]
@@ -75,17 +85,9 @@ w0 += [PI[0]] * (model.nbQ()) + [0] * (model.nbQdot())
 # w0 += list(Q[0])
 # w0 += list(np.zeros((2, 1)))
 
-#Q = Xk[:model.nbQ()]
 markers = Markers(Xk[:model.nbQ()])
 J += fctBel.fcn_objective_markers_Lea(wMa, wMt, markers, DataMarkeur[0])
 
-# Acck = MX.sym('A0', model.nbQddot())                        #car 2 DDL, acceleration angulaire (Acc_theta1, Acc_theta2)
-# w += [Acck]
-# ubw += [0] * (model.nbQddot())
-# lbw += [0] * (model.nbQddot())
-# w0 += [0] * (model.nbQddot())
-
-# PMk = [[[0 * 3] * Nb_Markeur] * N]                          #Position Markeurs
 
 t = time.time()
 
@@ -93,20 +95,21 @@ t = time.time()
 #Formulation du NLP
 
 for k in range(N):
-    UTarc = MX.sym('UTarc_' + str(k), Nb_Torque)
-    w += [UTarc]
-    ubw += [25] * Nb_Torque
-    lbw += [-25] * Nb_Torque
-    w0 += [0] * Nb_Torque
+    UAct = MX.sym('UAct_' + str(k), Nb_Muscles, 1)
+    w += [UAct]
+    ubw += [1] * Nb_Muscles
+    lbw += [0] * Nb_Muscles
+    w0 += [0.5] * Nb_Muscles
 
-    # J += UTarc * UTarc
-    # J += [UTarc[k] * UTarc[k] for k in range(Nb_Torque)]
-    # J += sum([UTarc[k] * UTarc[k] for k in range(Nb_Torque)])       # U.T.mtimes(U)     Produit scalaire
-    # J += 0.1*mtimes(UTarc.T, UTarc) + 0.1*mtimes(Xk.T, Xk)
-    J += 1 * mtimes(UTarc.T, UTarc)
+    J += Pa * mtimes(UAct.T, UAct)
+
+    Tarc = FA(Xk, UAct)
+
+    # J += 0.1*mtimes(Tarc.T, Tarc) + 0.1*mtimes(Xk.T, Xk)
+    # J += 0.1 * mtimes(Tarc.T, Tarc)                           # a garder ????????? Plus difficile à évaluer dans présentation
 
     # Calcul q' et q en k+1
-    Fk = INT(x0 = Xk, p = UTarc)
+    Fk = INT(x0 = Xk, p = Tarc)
     Xkend = Fk['xf']
 
     Xk = MX.sym('X_' + str(k + 1), (model.nbQ() + model.nbQdot()))
@@ -126,17 +129,12 @@ for k in range(N):
     ubg += [0] * (model.nbQ() + model.nbQdot())
     lbg += [0] * (model.nbQ() + model.nbQdot())
 
-    # Q = Xk[:model.nbQdot()+model.nbQ():2]
-    #Q = Xk[:model.nbQ()]
     markers = Markers(Xk[:model.nbQ()])
-    J += fctBel.fcn_objective_markers_Lea(wMa, wMt, markers, DataMarkeur[int((k+1)*Ncmv/N - 1)])                  # int() et pas round() pour eviter de retomber sur quelque chose supperieur a Ncmv
+    dataMarkers = DataMarkeur[int((k + 1) * Ncmv / N - 1)]  # int() et pas round() pour eviter de retomber sur quelque chose supperieur a Ncmv
+    J += MD(markers, dataMarkers)
     # J += fctBel.fcn_objective_markers_Lea(wMa, wMt, markers, DataMarkeur[k+1])                  # int() et pas round() pour eviter de retomber sur quelque chose supperieur a Ncmv
-
-# UTarc = MX.sym('UTarc_' + str(N), Nb_Torque)        # Ajout pour avoir N+1 torque
-# w += [UTarc]
-# ubw += [100] * Nb_Torque
-# lbw += [-100] * Nb_Torque
-# w0 += [0] * Nb_Torque
+# wMa = 1000000
+# wMt = 1000000
 obj = Function('obj', [vertcat(*w)], [J])
 print('Value of obj at 0 :')
 print(obj(w0))
@@ -160,5 +158,5 @@ print(f"Time to solve regular problem {time.time() - t}")
 
 Tart_opt = sol['x'].full().flatten()                                                               #Bibliotheque de solution, contenant f, g, et x
 
-np.save('Couple_Opt_V3-Couple2.npy', Tart_opt)
+np.save('Couple_Opt_V6-Couple.npy', Tart_opt)
 
