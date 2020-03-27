@@ -10,6 +10,7 @@ import conf as conf
 
 T          = conf.T
 N          = conf.N
+CM = conf.CM
 dN         = T/N
 plt.ion()
 
@@ -52,16 +53,22 @@ J = 0                                       #A optimiser
 g = []                                      #Contrainte
 ubg = []
 lbg = []
-DataMarkeur = np.load('DataMarkeur-Couple.npy')    #Data position Markeur Reel - CREER Virtuel
-Ncmv = len(DataMarkeur)                     # Nombre de dataMarkeur, CMV : Creat
-# Shapecmv = DataMarkeur.shape
-# DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])
-Nb_Markeur = model.nbMarkers()              #Nombre de Markeur Model
+Nb_Markeur = model.nbMarkers()                          #Nombre de Markeur Model
 Nb_Muscles = model.nbMuscleTotal()
 Nb_Torque = model.nbGeneralizedTorque()
 wMa = conf.wMa
 wMt = conf.wMt
-Pa = conf.Pa                                # Poid erreur activation
+Pa = conf.Pa                                              # Poid erreur activation
+if CM == 1:
+    DataMarkeur = np.load('DataMarkeur-Couple.npy')         #Data position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)                                 # Nombre de dataMarkeur, CMV for Creat Mark Virtuel
+    # Shapecmv = DataMarkeur.shape
+    # DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])         # Option : put some nose to the data markeur
+elif CM == 0:
+    DataMarkeur = np.load('DataMarkeur.npy')                #Data position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)                                 # Nombre de dataMarkeur, CMV for Creat Mark Virtuel
+    # Shapecmv = DataMarkeur.shape
+    # DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])         # Option : put some nose to the data markeur
 
 # Intitialisation lineaire de Q
 
@@ -158,5 +165,8 @@ print(f"Time to solve regular problem {time.time() - t}")
 
 Tart_opt = sol['x'].full().flatten()                                                               #Bibliotheque de solution, contenant f, g, et x
 
-np.save('Couple_Opt_V6-Couple.npy', Tart_opt)
+if CM == 1 :
+    np.save('Couple_Opt_V6-Couple.npy', Tart_opt)
+elif CM == 0 :
+    np.save('Couple_Opt_V6.npy', Tart_opt)
 

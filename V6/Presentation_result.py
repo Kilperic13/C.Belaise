@@ -16,13 +16,20 @@ T = conf.T
 N = conf.N
 wMa = conf.wMa
 Pa = conf.Pa
-DataMarkeur = np.load('DataMarkeur-Couple.npy')   #position Markeur Reel - CREER Virtuel
-Ncmv = len(DataMarkeur)        #
+CM = conf.CM
+
 dN = T / N                                          # Pas de temps
 Nb_Markeur = model.nbMarkers()                      # Nombre de Markeur Model
 Nb_Torque = model.nbGeneralizedTorque()             # Nombre de couple articulaire a trouver du Model
 Nb_Muscle = model.nbMuscleTotal()
-Tart_opt = np.load('Couple_Opt_V6-Couple.npy')                # Couple articulaire - OPTIMISER
+if CM == 1:
+    Tart_opt = np.load('Couple_Opt_V6-Couple.npy')          # Couple articulaire - OPTIMISER
+    DataMarkeur = np.load('DataMarkeur-Couple.npy')         #position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)
+elif CM == 0:
+    Tart_opt = np.load('Couple_Opt_V6.npy')                 # Couple articulaire - OPTIMISER
+    DataMarkeur = np.load('DataMarkeur.npy')                #position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)
 
 
 # Recuperation data a partir fichier optimise
