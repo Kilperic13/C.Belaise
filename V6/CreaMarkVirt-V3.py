@@ -87,12 +87,12 @@ elif CM == 0:
     markers = [[model.markers(np.array(Q.T[k]))[j].to_array() for j in range(len(model.markers(np.array(Q.T[k]))))] for k in
                range(len(Q1))]
 
-# if CM == 0 :
-#     np.save('DataMarkeur.npy', markers)
-#     NewMarkers = np.load('DataMarkeur.npy')
-# elif CM == 1 :
-#     np.save('DataMarkeur-Couple.npy', markers)
-#     NewMarkers = np.load('DataMarkeur-Couple.npy')
+if CM == 0 :
+    np.save('DataMarkeur.npy', markers)
+    NewMarkers = np.load('DataMarkeur.npy')
+elif CM == 1 :
+    np.save('DataMarkeur-Couple.npy', markers)
+    NewMarkers = np.load('DataMarkeur-Couple.npy')
 
 # print(NewMarkers)
 # print(Q)
