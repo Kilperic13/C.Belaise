@@ -12,7 +12,7 @@ N = conf.N
 CM = conf.CM
 dN = T/N
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
 #coucou
 
 # Creation of integrals functions
@@ -81,18 +81,16 @@ elif CM == 1:
 
 # Definition of markers positions in array type. Argument : Step calculation, Number of Marker, Coordinate xyz
 
-if CM == 1:
-    markers = [[model.markers(np.array(Q[k]))[j].to_array() for j in range(len(model.markers(np.array(Q[k]))))] for k in range(N)]
-elif CM == 0:
-    markers = [[model.markers(np.array(Q.T[k]))[j].to_array() for j in range(len(model.markers(np.array(Q.T[k]))))] for k in
-               range(len(Q1))]
-
-# if CM == 0 :
-#     np.save('DataMarkeur.npy', markers)
-#     NewMarkers = np.load('DataMarkeur.npy')
-# elif CM == 1 :
-#     np.save('DataMarkeur-Couple.npy', markers)
-#     NewMarkers = np.load('DataMarkeur-Couple.npy')
+if CM == 0 :
+    markers = [[model.markers(np.array(Q.T[k]))[j].to_array() for j in range(len(model.markers(np.array(Q.T[k]))))] for
+               k in range(len(Q1))]
+    np.save('DataMarkeur.npy', markers)
+    NewMarkers = np.load('DataMarkeur.npy')
+elif CM == 1 :
+    markers = [[model.markers(np.array(Q[k]))[j].to_array() for j in range(len(model.markers(np.array(Q[k]))))] for k in
+               range(N)]
+    np.save('DataMarkeur-Couple.npy', markers)
+    NewMarkers = np.load('DataMarkeur-Couple.npy')
 
 # print(NewMarkers)
 # print(Q)
@@ -143,12 +141,12 @@ elif CM == 1 :
 if CM == 1:
     qs = np.array([Q[:-1, 0], Q[:-1, 1]])                                                   # argument = different angle of you model by DoF
     np.save("visual", qs.T)                                                                 # qs.T is the transposed matrix to the matrix qs
-    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")             # find your model
+    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V3/arm26.bioMod")             # find your model
     b.load_movement(qs.T)
     b.exec()
 elif CM == 0:
     qs = np.array([Q1, Q2])                                                               # argument = different angle of you model by DoF
     np.save("visual", qs.T)                                                               # qs.T is the transposed matrix to the matrix qs
-    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")           # find your model
+    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V3/arm26.bioMod")           # find your model
     b.load_movement(qs.T)
     b.exec()
