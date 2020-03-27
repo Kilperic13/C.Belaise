@@ -81,16 +81,14 @@ elif CM == 1:
 
 # Definition of markers positions in array type. Argument : Step calculation, Number of Marker, Coordinate xyz
 
-if CM == 1:
-    markers = [[model.markers(np.array(Q[k]))[j].to_array() for j in range(len(model.markers(np.array(Q[k]))))] for k in range(N)]
-elif CM == 0:
-    markers = [[model.markers(np.array(Q.T[k]))[j].to_array() for j in range(len(model.markers(np.array(Q.T[k]))))] for k in
-               range(len(Q1))]
-
 if CM == 0 :
+    markers = [[model.markers(np.array(Q.T[k]))[j].to_array() for j in range(len(model.markers(np.array(Q.T[k]))))] for
+               k in range(len(Q1))]
     np.save('DataMarkeur.npy', markers)
     NewMarkers = np.load('DataMarkeur.npy')
 elif CM == 1 :
+    markers = [[model.markers(np.array(Q[k]))[j].to_array() for j in range(len(model.markers(np.array(Q[k]))))] for k in
+               range(N)]
     np.save('DataMarkeur-Couple.npy', markers)
     NewMarkers = np.load('DataMarkeur-Couple.npy')
 
