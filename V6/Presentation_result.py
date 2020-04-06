@@ -6,8 +6,9 @@ import time
 import biorbd
 from BiorbdViz import BiorbdViz
 import conf as conf
+import fct_belaise as fctBel
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V7/arm26.bioMod")
 
 
 # Initialisation / Importation donnee base
@@ -23,12 +24,16 @@ Nb_Markeur = model.nbMarkers()                      # Nombre de Markeur Model
 Nb_Torque = model.nbGeneralizedTorque()             # Nombre de couple articulaire a trouver du Model
 Nb_Muscle = model.nbMuscleTotal()
 if CM == 1:
-    Tart_opt = np.load('Couple_Opt_V6-Couple.npy')          # Couple articulaire - OPTIMISER
+    Tart_opt = np.load('Couple_Opt_V7-Couple.npy')          # Couple articulaire - OPTIMISER
     DataMarkeur = np.load('DataMarkeur-Couple.npy')         #position Markeur Reel - CREER Virtuel
     Ncmv = len(DataMarkeur)
 elif CM == 0:
-    Tart_opt = np.load('Couple_Opt_V6.npy')                 # Couple articulaire - OPTIMISER
+    Tart_opt = np.load('Couple_Opt_V7.npy')                 # Couple articulaire - OPTIMISER
     DataMarkeur = np.load('DataMarkeur.npy')                #position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)
+elif CM == 2:
+    Tart_opt = np.load('Couple_Opt_V7-Activation.npy')
+    DataMarkeur = np.load('DataMarkeur-Activation.npy')
     Ncmv = len(DataMarkeur)
 
 
@@ -52,6 +57,12 @@ Act_opt = [Tart_opt[i + 4::Periode] for i in range(Nb_Muscle)]
 #A5_opt = Tart_opt[8::Periode]
 #A6_opt = Tart_opt[9::Periode]
 #Act_opt = [A1_opt, A2_opt, A3_opt, A4_opt, A5_opt, A6_opt]
+
+# Observation couple : pas possible du a l'environnement
+# Tor_opt = np.array([])
+# for k in range(N):
+#     Xk = np.array([Q1_opt[k], Q2_opt[k], Q1dot_opt[k], Q2dot_opt[k]])
+#     Tor_opt = np.vstack([T, fctBel.fct_Tarticulaire(Xk, np.array(Act_opt)[:, k]).to_array()])
 
 
 # Traitement donnees - Calcul Erreur entre marker opt et creer
@@ -108,7 +119,7 @@ print(f'fct-obj = {J}')
 plt.plot(tps, ErreurX, label='X')
 plt.plot(tps, ErreurY, label='Y')
 plt.plot(tps, ErreurZ, label='Z')
-plt.title(f'Erreur Markeur V6 - W = {wMa} - N = {N}')
+plt.title(f'Erreur Markeur V7 - W = {wMa} - N = {N}')
 plt.legend(loc='best')
 plt.figure()
 # plt.ion()
@@ -160,7 +171,7 @@ plt.figure()
 plt.subplot(2, 1, 1)
 plt.plot(tps, Q1_opt, label='Q_1')                      # Theta 1
 plt.plot(tps, Q1dot_opt, label='Qdot_1')                # Vitesse Theta 1
-plt.title(f'Etat optimise V6 - W = {wMa} - N = {N}')
+plt.title(f'Etat optimise V7 - W = {wMa} - N = {N}')
 plt.legend(loc='best')
 plt.subplot(2, 1, 2)
 plt.plot(tps, Q2_opt, label='Q_2')                      # Theta 2
@@ -178,6 +189,6 @@ plt.show(block=True)
 
 # qs = Q_opt.T                                                                        # argument = les differents angles de ton model par DDL
 # np.save("visual", qs.T)                                                             # qs.T pour transposer de qs
-# b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V2/arm26.bioMod")            # Va chercher ton modele
+# b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V7/arm26.bioMod")            # Va chercher ton modele
 # b.load_movement(qs.T)
 # b.exec()
