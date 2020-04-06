@@ -6,29 +6,23 @@ import time
 import biorbd
 from BiorbdViz import BiorbdViz
 # from implementation_belaise_V1 import Nibv1, Tibv1
+import conf as conf
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V7/arm26.bioMod")
 
-T = 3.2
-N = 151
-# T = Tibv1
-# N = Nibv1
+T          = conf.T
+N          = conf.N
+
+VecSDyn = biorbd.VecBiorbdMuscleStateDynamics(model.nbMuscleTotal())
+act = MX.sym('act', 1, 1)
+setAct = lambda vec,act : vec.setActivation(act)
 
 
-def fct_Tarticulaire(etat, activation) :                           # Retourne Liste 2x1, car 2 couples articulaires
-    VecStateDyn = biorbd.VecBiorbdMuscleStateDynamics(model.nbMuscleTotal())
+def fct_Tarticulaire(etat, activation):                           # Retourne Liste 2x1, car 2 couples articulaires
     for k in range(model.nbMuscleTotal()):
-        Vec = VecStateDyn[k]
-        Vec.setActivation(activation[k])
-    Result = model.muscularJointTorque(VecStateDyn, np.array([etat[0], etat[0 + model.nbDof()]]), np.array([etat[1], etat[1 + model.nbDof()]]))
+        setAct(VecSDyn[k], activation[k])
+    Result = model.muscularJointTorque(VecSDyn, etat[:model.nbDof()], etat[model.nbDof():])
     return Result
-
-# def fct_obj_markeurs(Q, Data_Markeur, k):
-#     Markers = Function('markers', [Q], model.markers(Q)).expand()
-#     markers = Markers(Q)
-#     Jm = 0
-#     for nMark in range(model.nbMarkers()):
-#
 
 
 def fcn_objective_markers_Lea(wMa, wMt, markers, M_real):
@@ -37,10 +31,6 @@ def fcn_objective_markers_Lea(wMa, wMt, markers, M_real):
     # wMt = scaling technical marker
     # q = les positions généralisées
     # M_real = positions des markers
-
-                                    # markers position
-    # markers = [model.markers(Q)[j] for j in range(model.nbMarkers())]
-
 
     Jm = 0
     for nMark in range(model.nbMarkers()):
@@ -63,6 +53,3 @@ def fct_EtoA(exitation):
 
 def fct_Tmuscle(etat, activation) :                                 # Retourne Liste 2x3, car 2 articulation, 3 directions
     return [[1*etat*activation, 1, 1], [2*etat*activation, 2, 2]]
-
-# T = Tibv1
-# N = Nibv1
