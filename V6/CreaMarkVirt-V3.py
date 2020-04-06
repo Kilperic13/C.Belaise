@@ -6,13 +6,14 @@ import scipy.interpolate
 import scipy.integrate
 import numpy as np
 import conf as conf
+import fct_belaise as fctBel
 
 T = conf.T
 N = conf.N
 CM = conf.CM
 dN = T/N
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V7/arm26.bioMod")
 #coucou
 
 # Creation of integrals functions
@@ -21,6 +22,7 @@ model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
 NbQ = model.nbQ()
 NbQd = model.nbQdot()
 NbTor = model.nbGeneralizedTorque()
+NbMcl = model.nbMuscleTotal()
 
 def func_ode(t, x, tau1, tau2):
     q = x[:NbQ]
@@ -78,6 +80,23 @@ elif CM == 1:
 
     V_Test = np.gradient(Q, dN, edge_order = 1, axis=0)          # By CURIOSITY !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+# Creation Base on the muscular activation
+elif CM == 2:
+    # Act = np.vstack([(1/(k+1)) * np.tanh(tps) for k in range(NbMcl)])
+    # Act = np.vstack([([0.4/(k+1) for j in range(int((N+1)/3))] + [0.2/(k+1) for j in range(int((N+1)/3))] + [0/(k+1) for j in range(int((N+1)/3)+1)]) for k in range(NbMcl)])
+    Act = np.vstack([([1/(k+2) for j in range(int((N+1)/2))] + [0/(k+1) for j in range(int((N+1)/2))]) for k in range(NbMcl)])
+    Tor = [np.zeros((2, 1)).squeeze()]
+    V = np.zeros((2, 1)).squeeze()
+    Q = np.array([1, 0.5])
+    Xk = []
+    Nbis = N
+    while Nbis != 0:
+        Xk = INT(np.append(Q[N - Nbis:], V[N - Nbis:]), T[N - Nbis:][0])
+        Q = np.vstack([Q, Xk[:NbQ, len(Xk[NbQd-1])-1]])
+        V = np.vstack([V, Xk[NbQ:, len(Xk[NbQd-1])-1]])
+        Tor = np.vstack([T, fctBel.fct_Tarticulaire(Xk[:, len(Xk[NbQd-1])-1], Act[:, N - Nbis]).to_array()])
+        Nbis -= 1
+
 
 # Definition of markers positions in array type. Argument : Step calculation, Number of Marker, Coordinate xyz
 
@@ -91,6 +110,11 @@ elif CM == 1 :
                range(N)]
     np.save('DataMarkeur-Couple.npy', markers)
     NewMarkers = np.load('DataMarkeur-Couple.npy')
+elif CM == 2 :
+    markers = [[model.markers(np.array(Q[k]))[j].to_array() for j in range(len(model.markers(np.array(Q[k]))))] for k in
+               range(N)]
+    np.save('DataMarkeur-Activation.npy', markers)
+    NewMarkers = np.load('DataMarkeur-Activation.npy')
 
 # print(NewMarkers)
 # print(Q)
@@ -105,7 +129,7 @@ elif CM == 1 :
 if CM == 0 :
     plt.plot(tps, Q.T, label = 'Position')
     plt.plot(tps, V.T, label = 'Vitesse')
-    plt.title('Position / Vitesse Initial')
+    plt.title('Initial Position / Vitesse')
     plt.legend(loc='best')
     plt.show(block=True)
     plt.figure()
@@ -125,7 +149,7 @@ elif CM == 1 :
     plt.plot(tps, V[:-1, 1], label = 'Vitesse 1 tan')
     # plt.plot(tps, Vbis_Test[:-1, 0], label = 'Vitesse Test 0 tan')
     # plt.plot(tps, Vbis_Test[:-1, 1], label = 'Vitesse Test 1 tan')
-    plt.title('Position Initial')
+    plt.title('Initial Position')
     plt.legend(loc='best')
     plt.show(block=True)
     plt.figure()
@@ -134,6 +158,22 @@ elif CM == 1 :
     plt.title('Initial Torque')
     plt.legend(loc='best')
     plt.show(block=True)
+elif CM == 2 :
+    plt.plot(tps, Q[:-1, 0], label = 'Position 0')
+    plt.plot(tps, Q[:-1, 1], label = 'Position 1')
+    plt.plot(tps, V[:-1, 0], label = 'Vitesse 0')
+    plt.plot(tps, V[:-1, 1], label = 'Vitesse 1')
+    plt.title('Initial Position')
+    plt.legend(loc='best')
+    plt.figure()
+    plt.plot(tps, Tor[1:, 0], label = 'Couple 0')
+    plt.plot(tps, Tor[1:, 1], label = 'Couple 1')
+    plt.title('Torque')
+    plt.legend(loc='best')
+    plt.figure()
+    plt.step(tps, Act.T)
+    plt.title('Initial Activation')
+    plt.show(block=True)
 
 
 # Display : creation biorbd-Viz
@@ -141,12 +181,18 @@ elif CM == 1 :
 if CM == 1:
     qs = np.array([Q[:-1, 0], Q[:-1, 1]])                                                   # argument = different angle of you model by DoF
     np.save("visual", qs.T)                                                                 # qs.T is the transposed matrix to the matrix qs
-    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")             # find your model
+    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V7/arm26.bioMod")             # find your model
     b.load_movement(qs.T)
     b.exec()
 elif CM == 0:
     qs = np.array([Q1, Q2])                                                               # argument = different angle of you model by DoF
     np.save("visual", qs.T)                                                               # qs.T is the transposed matrix to the matrix qs
-    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V6/arm26.bioMod")           # find your model
+    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V7/arm26.bioMod")           # find your model
+    b.load_movement(qs.T)
+    b.exec()
+elif CM == 2:
+    qs = np.array([Q[:-1, 0], Q[:-1, 1]])                                                   # argument = different angle of you model by DoF
+    np.save("visual", qs.T)                                                                 # qs.T is the transposed matrix to the matrix qs
+    b = BiorbdViz(model_path="/home/lim/Documents/code/Models/V7/arm26.bioMod")             # find your model
     b.load_movement(qs.T)
     b.exec()
