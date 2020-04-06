@@ -5,14 +5,12 @@ from casadi import *
 import time
 import biorbd
 from BiorbdViz import BiorbdViz
-import fct_belaise as fctBel
+import conf as conf
 
-T          = 3.2
-N          = 1000
-# Tibv1 = T
-# Nibv1 = N
-dN         = T/N
-plt.ion()
+T = conf.T
+N = conf.N
+CM = conf.CM
+dN = T/N
 
 
 model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
@@ -50,8 +48,8 @@ Ncmv = len(DataMarkeur)                     # Nombre de dataMarkeur, CMV : Creat
 # DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])
 Nb_Markeur = model.nbMarkers()              #Nombre de Markeur Model
 Nb_Torque = model.nbGeneralizedTorque()
-wMa = 1000000
-wMt = 1000000
+wMa = conf.wMa
+wMt = conf.wMt
 
 # Intitialisation lineaire de Q
 

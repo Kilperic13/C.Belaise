@@ -5,18 +5,22 @@ from casadi import *
 import time
 import biorbd
 from BiorbdViz import BiorbdViz
+import conf as conf
+
+
 
 model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
 
 
 # Initialisation / Importation donnee base
 
-T = 3.2
-N = 1000
-wMa = 1000000
+T = conf.T
+N = conf.N
+CM = conf.CM
+dN = T/N
+wMa = conf.wMa                                     # Pas de temps
 DataMarkeur = np.load('DataMarkeur-Couple2.npy')   #position Markeur Reel - CREER Virtuel
-Ncmv = len(DataMarkeur)        #
-dN = T / N                                          # Pas de temps
+Ncmv = len(DataMarkeur)
 Nb_Markeur = model.nbMarkers()                      # Nombre de Markeur Model
 Nb_Torque = model.nbGeneralizedTorque()             # Nombre de couple articulaire a trouver du Model
 Tart_opt = np.load('Couple_Opt_V3-Couple2.npy')                # Couple articulaire - OPTIMISER
