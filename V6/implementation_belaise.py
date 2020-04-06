@@ -15,7 +15,7 @@ dN         = T/N
 plt.ion()
 
 
-model = biorbd.Model("/home/lim/Documents/code/Models/V6/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V7/arm26.bioMod")
 
 
 # Creation des fonctionsCreat integral
@@ -32,7 +32,7 @@ dataMarkers = MX.sym('dataMarkers', model.nbMarkers(), 3)
 
 
 FD = Function('FD', [x, tau], [vertcat(x[-model.nbQdot():], model.ForwardDynamics(x[:model.nbQ()], x[-model.nbQdot():], tau).to_mx())]).expand()
-FA = Function('FA', [x, act], [fctBel.fct_Tarticulaire(x, act)]).expand()
+FA = Function('FA', [x, act], [fctBel.fct_Tarticulaire(x, act).to_mx()]).expand()
 MD = Function('MD', [markers, dataMarkers], [fctBel.fcn_objective_markers_Lea(conf.wMa, conf.wMt, markers, dataMarkers)]).expand()
 
 Markers = Function('markers', [q], [model.markers(q)]).expand()
@@ -69,11 +69,16 @@ elif CM == 0:
     Ncmv = len(DataMarkeur)                                 # Nombre de dataMarkeur, CMV for Creat Mark Virtuel
     # Shapecmv = DataMarkeur.shape
     # DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])         # Option : put some nose to the data markeur
+elif CM == 2:
+    DataMarkeur = np.load('DataMarkeur-Activation.npy')
+    Ncmv = len(DataMarkeur)
+    Shapecmv = DataMarkeur.shape
+    DataMarkeur += 0.1*np.random.randn(Shapecmv[0], Shapecmv[1], Shapecmv[2])         # Option : put some nose to the data markeur
 
 # Intitialisation lineaire de Q
 
-Initi_Debut = -5
-Initi_Fin = 10
+Initi_Debut = 1
+Initi_Fin = -1
 PI = [((Initi_Fin - Initi_Debut) * k * dN + Initi_Debut) for k in range(N+1)]
 
 #Creation premier noeud
@@ -86,8 +91,8 @@ PI = [((Initi_Fin - Initi_Debut) * k * dN + Initi_Debut) for k in range(N+1)]
 
 Xk = MX.sym('X0', (model.nbQ() + model.nbQdot()))           #ici 4 car 2 DDL et leurs vitesses (Theta1 - Wtheta1 - Theta2 - Wtheta2)
 w += [Xk]
-ubw += [10] * (model.nbQ()) + [10] * (model.nbQdot())
-lbw += [-10] * (model.nbQ()) + [-10] * (model.nbQdot())
+ubw += [6] * (model.nbQ()) + [10] * (model.nbQdot())
+lbw += [-6] * (model.nbQ()) + [-10] * (model.nbQdot())
 w0 += [PI[0]] * (model.nbQ()) + [0] * (model.nbQdot())
 # w0 += list(Q[0])
 # w0 += list(np.zeros((2, 1)))
@@ -166,7 +171,9 @@ print(f"Time to solve regular problem {time.time() - t}")
 Tart_opt = sol['x'].full().flatten()                                                               #Bibliotheque de solution, contenant f, g, et x
 
 if CM == 1 :
-    np.save('Couple_Opt_V6-Couple.npy', Tart_opt)
+    np.save('Couple_Opt_V7-Couple.npy', Tart_opt)
 elif CM == 0 :
-    np.save('Couple_Opt_V6.npy', Tart_opt)
+    np.save('Couple_Opt_V7.npy', Tart_opt)
+elif CM == 2 :
+    np.save('Couple_Opt_V7-Activation.npy', Tart_opt)
 
