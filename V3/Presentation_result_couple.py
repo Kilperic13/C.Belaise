@@ -7,23 +7,33 @@ import biorbd
 from BiorbdViz import BiorbdViz
 import conf as conf
 
-
-
-model = biorbd.Model("/home/lim/Documents/code/Models/V3/arm26.bioMod")
+model = biorbd.Model("/home/lim/Documents/code/Models/V7/arm26.bioMod")
 
 
 # Initialisation / Importation donnee base
 
 T = conf.T
 N = conf.N
+wMa = conf.wMa
+Pa = conf.Pa
 CM = conf.CM
-dN = T/N
-wMa = conf.wMa                                     # Pas de temps
-DataMarkeur = np.load('DataMarkeur-Couple2.npy')   #position Markeur Reel - CREER Virtuel
-Ncmv = len(DataMarkeur)
+dN = T / N
+
+if CM == 1:
+    Tart_opt = np.load('Couple_Opt_V7-Couple.npy')          # Couple articulaire - OPTIMISER
+    DataMarkeur = np.load('DataMarkeur-Couple.npy')         #position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)
+elif CM == 0:
+    Tart_opt = np.load('Couple_Opt_V7.npy')                 # Couple articulaire - OPTIMISER
+    DataMarkeur = np.load('DataMarkeur.npy')                #position Markeur Reel - CREER Virtuel
+    Ncmv = len(DataMarkeur)
+elif CM == 2:
+    Tart_opt = np.load('Couple_Opt_V7.3-Activation.npy')
+    DataMarkeur = np.load('DataMarkeur-Activation.npy')
+    Ncmv = len(DataMarkeur)
+
 Nb_Markeur = model.nbMarkers()                      # Nombre de Markeur Model
 Nb_Torque = model.nbGeneralizedTorque()             # Nombre de couple articulaire a trouver du Model
-Tart_opt = np.load('Couple_Opt_V3-Couple2.npy')                # Couple articulaire - OPTIMISER
 J = 0
 Jm = 0
 Jc = 0
